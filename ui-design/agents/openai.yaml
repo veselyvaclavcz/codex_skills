@@ -1,0 +1,4 @@
+interface:
+  display_name: "UI Design"
+  short_description: "Design stronger interfaces with native or template-backed direction"
+  default_prompt: "Use the ui-design skill to improve hierarchy, density, composition, and overall visual quality while respecting the existing design system and consulting the local template library when useful."

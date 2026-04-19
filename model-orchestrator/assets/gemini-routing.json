@@ -1,0 +1,78 @@
+{
+  "api_key_env": "GEMINI_API_KEY",
+  "roles": {
+    "fast_worker": {
+      "model": "gemini-3-flash-preview",
+      "generation_config": {
+        "temperature": 0.2,
+        "maxOutputTokens": 8192
+      }
+    },
+    "budget_worker": {
+      "model": "gemini-2.5-flash-lite",
+      "generation_config": {
+        "temperature": 0.1,
+        "maxOutputTokens": 4096
+      }
+    },
+    "reasoner": {
+      "model": "gemini-3-pro-preview",
+      "generation_config": {
+        "temperature": 0.1,
+        "maxOutputTokens": 16384
+      }
+    },
+    "verifier": {
+      "model": "gemini-3-pro-preview",
+      "generation_config": {
+        "temperature": 0.0,
+        "maxOutputTokens": 8192
+      }
+    },
+    "alternate_worker": {
+      "model": "gemma-3-27b-it",
+      "generation_config": {
+        "temperature": 0.3,
+        "maxOutputTokens": 4096
+      }
+    },
+    "media_worker": {
+      "model": "gemini-3-pro-image-preview",
+      "generation_config": {
+        "temperature": 0.8
+      },
+      "response_modalities": [
+        "TEXT",
+        "IMAGE"
+      ]
+    },
+    "media_worker_fast": {
+      "model": "gemini-2.5-flash-image",
+      "generation_config": {
+        "temperature": 0.8
+      },
+      "response_modalities": [
+        "TEXT",
+        "IMAGE"
+      ]
+    },
+    "tts_worker_fast": {
+      "model": "gemini-2.5-flash-preview-tts",
+      "generation_config": {
+        "temperature": 0.7
+      },
+      "response_modalities": [
+        "AUDIO"
+      ]
+    },
+    "tts_worker_quality": {
+      "model": "gemini-2.5-pro-preview-tts",
+      "generation_config": {
+        "temperature": 0.7
+      },
+      "response_modalities": [
+        "AUDIO"
+      ]
+    }
+  }
+}

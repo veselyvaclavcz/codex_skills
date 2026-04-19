@@ -1,0 +1,4 @@
+interface:
+  display_name: "Project Context Memory"
+  short_description: "Bootstrap and maintain shared project memory"
+  default_prompt: "Use $project-context-memory to create or update the shared documentation and conversation log for this project."
