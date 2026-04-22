@@ -1,4 +1,4 @@
 interface:
   display_name: "Model Orchestrator"
-  short_description: "Route tasks across multiple AI models"
-  default_prompt: "Use $model-orchestrator to design a cost-aware multi-model workflow for this task."
+  short_description: "Split work visibly across cheaper and stronger model lanes"
+  default_prompt: "Use $model-orchestrator only if this task can be decomposed into visible subtasks with real delegation and token savings. Show the delegation ledger, route bounded work to cheaper lanes, and keep final judgment in the orchestrator."

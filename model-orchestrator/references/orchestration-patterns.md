@@ -1,6 +1,28 @@
 # Orchestration Patterns
 
-Use this file when the task needs a concrete routing pattern, prompt contract, or example decomposition.
+Use this file when the task needs a concrete split that the user can actually see.
+
+Always start with a delegation ledger, not with implementation.
+
+## Delegation Ledger
+
+Use this exact shape or a close variant:
+
+```text
+Delegation Ledger
+- Task 1: ...
+  Owner: ...
+  Why this lane: ...
+  Input budget: small | medium | large
+  Expected return: ...
+- Task 2: ...
+  Owner: ...
+  Why this lane: ...
+  Input budget: small | medium | large
+  Expected return: ...
+```
+
+If you cannot fill this in clearly, you do not have a good orchestration plan yet.
 
 ## Minimal Delegation Contract
 
@@ -21,139 +43,147 @@ Return only:
 Escalate if:
 ```
 
-Keep delegate prompts short. If the prompt starts to include project history, summarize first.
+Keep prompts narrow. Shrink context before delegating.
 
-## Pattern 1: Split-Merge
+## Pattern 1: Chunk -> Compress -> Judge
 
-Use when many subtasks are independent.
+Use when large source material would otherwise force the expensive lane to reread too much.
 
 Flow:
 
-1. Orchestrator splits task into parallel units.
-2. Fast or budget workers execute each unit.
-3. Orchestrator merges and normalizes outputs.
-4. Verifier checks the merged result if stakes are non-trivial.
+1. Split the material into chunks.
+2. Budget workers extract facts or summaries per chunk.
+3. Fast worker consolidates the chunk outputs.
+4. Orchestrator reads only the compressed evidence and decides.
 
 Best for:
 
-- document batches
-- file-by-file analysis
-- parallel research
+- long documents
+- logs
+- transcripts
+- large codebase reconnaissance
+
+## Pattern 2: Scout -> Solve
+
+Use when the main cost is finding the right evidence, not solving once the evidence is known.
+
+Flow:
+
+1. Budget or fast worker scouts candidate files, modules, stack traces, or entities.
+2. Orchestrator or fast worker solves using only the narrowed candidate set.
+
+Best for:
+
+- bug localization
+- file triage
+- dependency impact scans
 - issue clustering
 
-## Pattern 2: Draft-Critique-Revise
+## Pattern 3: Fan-Out -> Judge
 
-Use when first-pass output is cheap but correctness matters.
+Use when several units are independent and can run in parallel.
+
+Flow:
+
+1. Split into bounded units.
+2. Send each unit to a budget or fast worker.
+3. Orchestrator compares only compact returns.
+4. Verifier checks the merged result only if risk is non-trivial.
+
+Best for:
+
+- provider-by-provider research
+- document batches
+- file-by-file analysis
+- repeated transforms
+
+## Pattern 4: Draft -> Critique -> Revise
+
+Use when the first draft is cheap but correctness matters.
 
 Flow:
 
 1. Fast worker drafts.
-2. Verifier critiques against acceptance criteria.
-3. Orchestrator revises or chooses between candidates.
+2. Verifier critiques against explicit acceptance criteria.
+3. Orchestrator revises or chooses.
 
 Best for:
 
+- patch proposals
 - user-facing writing
-- code patch proposals
-- requirements drafts
 - migration plans
-
-## Pattern 3: Chunk-Compress-Solve
-
-Use when source material is too large for the expensive model to read directly.
-
-Flow:
-
-1. Budget worker processes chunks.
-2. Fast worker consolidates chunk outputs.
-3. Orchestrator solves the real problem from compressed evidence.
-
-Best for:
-
-- long docs
-- support logs
-- large codebases
-- transcript corpora
-
-## Pattern 4: Multi-Candidate Judge
-
-Use when diversity helps.
-
-Flow:
-
-1. Send the same bounded prompt to 2-3 workers.
-2. Ask each for a concise output with evidence and confidence.
-3. Let the orchestrator compare and choose or synthesize.
-
-Best for:
-
-- architecture options
-- bug hypotheses
-- naming and API design
-- refactor strategies
-
-Do not use this pattern if the judging criteria are still unclear.
+- refactor options
 
 ## Pattern 5: Specialist Sidecar
 
-Use when one subtask needs a different modality or specialty.
+Use when one subtask needs a different modality.
 
 Flow:
 
-1. General model owns the main flow.
-2. A specialist model handles one modality-heavy or domain-heavy side task.
-3. General model incorporates the result and keeps the thread coherent.
+1. General lane owns the thread.
+2. A specialist lane handles one modality-heavy subtask.
+3. Orchestrator incorporates the result and keeps the workflow coherent.
 
 Best for:
 
 - screenshot interpretation
-- voice or streaming turns
+- PDF reading
 - image generation
-- video generation
+- speech or media subtasks
 
-## Example: Coding Task
+## Example: Medium Coding Task
 
-Task: implement a feature across a medium repo while controlling token cost.
+Goal: save expensive-context usage while implementing a feature in a medium repo.
 
-Recommended routing:
-
-1. Orchestrator defines scope, affected modules, test expectations.
-2. Budget worker tags files and clusters likely touch points.
-3. Fast worker summarizes each touched module and drafts candidate edits.
-4. Orchestrator decides final patch plan and integrates.
-5. Verifier reviews for regressions or missing edge cases.
+```text
+Delegation Ledger
+- Task 1: Identify likely touched files
+  Owner: budget_worker
+  Why this lane: cheap reconnaissance
+  Input budget: medium
+  Expected return: ranked file list with one-line reasons
+- Task 2: Summarize touched modules
+  Owner: fast_worker
+  Why this lane: broader code understanding on narrowed scope
+  Input budget: medium
+  Expected return: module summaries and patch candidates
+- Task 3: Final patch plan and integration
+  Owner: orchestrator
+  Why this lane: merge decisions and final judgment
+  Input budget: small
+  Expected return: accepted implementation plan
+```
 
 ## Example: Research Task
 
-Task: compare three providers and recommend one.
+Goal: compare three vendors without reading full vendor docs in the top lane.
 
-Recommended routing:
-
-1. Budget worker summarizes each provider independently.
-2. Fast worker builds a comparison matrix.
-3. Orchestrator writes the recommendation, tradeoffs, and decision rule.
-
-## Example: Large Document Task
-
-Task: synthesize policy changes from a long PDF corpus.
-
-Recommended routing:
-
-1. Budget worker extracts clause-level facts per chunk.
-2. Fast worker groups facts by topic and highlights conflicts.
-3. Orchestrator writes the final synthesis and unresolved questions.
+```text
+Delegation Ledger
+- Task 1: Summarize vendor A
+  Owner: budget_worker
+- Task 2: Summarize vendor B
+  Owner: budget_worker
+- Task 3: Summarize vendor C
+  Owner: budget_worker
+- Task 4: Build comparison matrix
+  Owner: fast_worker
+- Task 5: Final recommendation
+  Owner: orchestrator
+```
 
 ## Guardrails
 
 Always:
 
-- define output schema before fan-out
-- preserve evidence when compressing
-- keep a fallback path to a stronger model
-- track which outputs are verified versus provisional
+- show the split
+- define return schema before fan-out
+- compress before merge
+- keep verifier optional, not automatic
 
 Never:
 
-- use cheap workers for final sign-off on high-impact work
-- treat long raw context as free
-- let each worker invent its own task definition
+- orchestrate without a visible ledger
+- delegate tasks that still require the whole thread
+- let workers return essays
+- pay multi-model cost when one lane would clearly be cheaper
