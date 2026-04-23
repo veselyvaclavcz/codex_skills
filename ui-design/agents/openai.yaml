@@ -1,4 +1,4 @@
 interface:
   display_name: "UI Design"
   short_description: "Design stronger interfaces with Figma-first iteration, TypeUI anchors, and editable handoff"
-  default_prompt: "Use the ui-design skill to choose a strong visual direction, decide between code-direct, Figma-first, or Figma-fidelity workflow, consult TypeUI selectively, and prefer editable Figma iteration over generic AI mockups."
+  default_prompt: "Use $ui-design to choose a strong visual direction, decide between code-direct, Figma-first, or Figma-fidelity workflow, and prefer editable Figma iteration over generic AI mockups."

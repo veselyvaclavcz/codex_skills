@@ -1,72 +1,66 @@
 ---
-name: "ui-design"
-description: "Improve UI design quality for web and app interfaces. Use when the task is to design, redesign, polish, modernize, restyle, improve layout, hierarchy, density, spacing, typography, colors, navigation, forms, dashboards, admin panels, landing pages, chart UI, or design systems. Also use when Codex should choose a visual direction from reference libraries, generate an editable first pass in Figma, support a loop of AI draft -> manual visual edits -> AI implementation, or translate a manually refined Figma frame back into production code."
+name: ui-design
+description: Improve UI design quality for web and app interfaces. Use when Codex should design, redesign, polish, modernize, restyle, improve layout, hierarchy, density, spacing, typography, color, navigation, forms, dashboards, admin panels, landing pages, chart UI, or design systems. Also use when Codex should choose a visual direction from reference libraries, generate an editable first pass in Figma, support a loop of AI draft to manual visual edits to AI implementation, or translate a manually refined Figma frame back into production code.
 ---
 
 # UI Design
 
-Use this skill when the task is about making an interface look and feel better, not just making it function.
+Use this skill when the problem is visual quality, not just functional correctness.
 
-This skill is Figma-first, not prompt-only.
+Default stance:
 
-Preferred workflow:
+- preserve the existing design language when one already exists
+- prefer editable artifacts over one-shot mockups
+- use AI for momentum, not for final visual judgment
+- avoid generic filler, weak hierarchy, washed-out gradients, and fake complexity
 
-1. choose a visual direction
-2. generate an editable first pass in Figma
-3. manually refine details in Figma
-4. hand the chosen frame back to Codex for implementation
+If the task includes a Figma URL or node ID, also use `figma` or `figma-implement-design`.
 
-If the task includes a Figma URL or node ID, also use `figma` or `figma-implement-design`. Figma remains the source of truth for exact implementation.
+## Decide The Lane First
 
-## Core Rules
+Pick one lane before editing:
 
-- Preserve the existing design system when one already exists.
-- Prefer editable design artifacts over one-shot HTML mockups.
-- Use AI to create momentum, not to replace visual judgment.
-- Let the user intervene directly in Figma whenever prompt iteration becomes noisy.
-- Pick one visual direction per screen and carry it through consistently.
-- Do not ship obvious AI filler: weak hierarchy, generic stat cards, washed-out gradients, decorative copy, or empty visual complexity.
-- Favor reusable primitives and tokenized styling over scattered literals and throwaway wrappers.
+- `code-direct`: the system is already strong and the work is mainly polish, density, hierarchy, or implementation
+- `figma-first`: direction is weak, several variants are needed, or manual visual refinement will be faster in Figma than in code
+- `figma-fidelity`: a specific Figma frame already exists and the main task is faithful implementation
 
-## Execution Lanes
+Do not start in code by reflex if the hard part is visual judgment.
+Do not start in Figma by reflex if the hard part is straightforward implementation.
 
-Choose one lane up front:
+## Pick One Mode
 
-- `Code-direct`: the repo already has a strong system and the work is mostly implementation, polish, hierarchy, or density.
-- `Figma-first`: direction is unclear, several variants are needed, or visual refinement will be faster in a design editor than in code.
-- `Figma-fidelity`: a specific Figma frame already exists and the main task is faithful implementation.
+Inside the chosen lane, use one mode:
 
-Do not start in code by reflex if the hard part is visual judgment. Do not start in Figma by reflex if the visual system is already settled.
+- `project-native`: refine the existing language without importing a new one
+- `hybrid-reference`: keep the local system but borrow composition, typography, or token ideas from one strong anchor
+- `template-led`: the current UI is weak or generic, so choose one anchor and rebuild toward it
 
-## Working Modes
+Do not average multiple references together. Choose one primary anchor and at most one narrow secondary reference.
 
-Inside the chosen lane, pick one mode:
+## References
 
-- `Project-native`: refine the existing language without importing a new one.
-- `Hybrid reference`: keep the local system, but borrow composition, typography, or token ideas from one strong anchor.
-- `Template-led`: the current UI is weak or generic, so choose one anchor and rebuild toward it.
-
-Do not average multiple anchors together. Choose one primary anchor and at most one narrow secondary reference.
-
-## Reference Sources
-
-Use references deliberately instead of mixing everything at once.
+Use references deliberately.
 
 ### TypeUI
 
-TypeUI is the stable source for visual anchors and page-type direction.
+TypeUI is the main source for visual anchors and page-type direction.
 
 Read in this order:
 
 1. `references/typeui-registry/catalog.md`
 2. `references/typeui-registry/page-type-variants.md`
-3. only the specific `references/typeui-registry/skills/*.md` files you need
+3. only the specific `references/typeui-registry/skills/*.md` files you actually need
 
-### Figma AI and handoff
+### Figma
 
 Figma is the editable iteration surface.
 
-Use it for:
+Read:
+
+1. `references/figma-first-workflow.md`
+2. `references/figma-prompt-patterns.md`
+
+Use Figma for:
 
 - editable first-pass generation
 - structural or stylistic variants
@@ -74,99 +68,76 @@ Use it for:
 - comparing alternatives side by side
 - locking the chosen frame before implementation
 
-Read:
-
-1. `references/figma-first-workflow.md`
-2. `references/figma-prompt-patterns.md`
-
 ## Workflow
 
-### 1. Ground the task in real constraints
+### 1. Ground the task in the real system
 
 Before changing UI, inspect:
 
 - component system and primitives
 - typography and color tokens
 - spacing density
-- target surface: desktop, mobile, admin, landing page, workflow, settings
+- target surface such as desktop, mobile, admin, landing page, workflow, or settings
 - whether the user wants fidelity, variation, or a stronger reset
 
-For shadcn projects, inspect local `components.json`, global CSS, token definitions, and `components/ui/*` before inventing patterns.
+For shadcn projects, inspect local `components.json`, global CSS, token definitions, and `components/ui/*` before inventing new patterns.
 
 ### 2. State the design thesis
 
-When the change is substantial, write one sentence that fixes the direction before editing.
+For substantial changes, write one sentence that fixes direction before editing.
 
 Examples:
 
-- `Project-native, code-direct: denser CRM review screen with clearer status hierarchy and less chrome.`
-- `Hybrid, Figma-first: existing app sharpened with mono-heavy technical typography and stronger left-nav structure.`
-- `Template-led, Figma-first: editorial marketing page with restrained serif contrast and large sectional rhythm.`
+- `project-native, code-direct: denser CRM review screen with clearer status hierarchy and less chrome`
+- `hybrid-reference, figma-first: existing app sharpened with mono-heavy technical typography and stronger left-nav structure`
+- `template-led, figma-first: editorial marketing page with restrained serif contrast and large sectional rhythm`
 
-### 3. Choose the right medium
+### 3. Use the right medium
 
-Use `Code-direct` when:
+Use `code-direct` when:
 
 - the visual language already exists
 - the issue is mostly spacing, structure, or component polish
-- implementation speed matters more than visual exploration
+- implementation speed matters more than exploration
 
-Use `Figma-first` when:
+Use `figma-first` when:
 
-- the current design direction is weak or undefined
-- you need 2-4 variants before committing
-- the user wants to manually adjust the result
+- the current direction is weak or undefined
+- you need a few variants before committing
+- the user wants direct visual control
 - layout, typography, and rhythm are the hard part
 
-Use `Figma-fidelity` when:
+Use `figma-fidelity` when:
 
 - a frame already exists and should be implemented with high fidelity
-- the task is mainly handoff, not exploration
+- the task is handoff, not exploration
 
-### 4. Run the editable Figma loop
+### 4. Run the editable loop when needed
 
-If you choose `Figma-first`:
+If you choose `figma-first`:
 
-1. Generate a first pass with Figma AI using First Draft or Figma Make.
-2. Duplicate the frame before big mutations.
-3. Branch into a small number of meaningful variants.
-4. Use prompts for structural or thematic changes.
-5. Use direct manual edits for spacing, typography, alignment, grouping, and emphasis.
-6. Pick the winning frame.
-7. Hand the exact frame or node URL back to Codex for implementation through Figma MCP.
+1. generate a first pass with Figma AI
+2. duplicate the frame before large mutations
+3. branch into a small number of meaningful variants
+4. use prompts for macro changes
+5. use manual edits for spacing, alignment, typography, grouping, and emphasis
+6. pick the winning frame
+7. hand the exact frame or node back to Codex for implementation
 
-The Figma frame is the working surface. The codebase is the durable product output.
-
-### 5. Use AI for macro moves, manual edits for micro moves
-
-Good AI tasks:
-
-- first-pass layout generation
-- alternate navigation structures
-- light or dark theme shifts
-- tone or aesthetic pivots
-- adding or removing sections
-
-Good manual tasks:
-
-- spacing rhythm
-- font swaps
-- weight and size tuning
-- edge alignment
-- visual emphasis and scan order
-- section compression
+Use AI for macro moves.
+Use manual editing for micro moves.
 
 If the issue is a 10-pixel judgment call, stop prompting and edit the frame.
 
-### 6. Implement from primitives
+### 5. Implement from primitives
 
-- Reuse or extend existing primitives first.
-- Keep component APIs composable and unsurprising.
-- Translate reference logic into local code rather than copying template structure mechanically.
-- Prefer CSS variables, tokens, and shared classes over repeated literals.
-- If a screen only looks good in the mockup but not in code, the design is not finished.
+- reuse or extend existing primitives first
+- keep component APIs composable and unsurprising
+- translate reference logic into local code instead of copying template structure mechanically
+- prefer CSS variables, tokens, and shared classes over repeated literals
+- if a screen only looks good in the mockup but not in code, the design is not finished
 
-### 7. Validate the interaction layer
+### 6. Validate the interaction layer
 
 Check:
 
@@ -188,27 +159,12 @@ If the user wants direct visual control:
 - avoid forcing them to validate small visual choices in code
 - capture the chosen result back in code once the frame is stable
 
-Use AI for exploration. Use manual editing for judgment-heavy refinement.
-
-## References
-
-Read these files as needed:
-
-- `references/figma-first-workflow.md`: editable Figma-first loop from AI draft to manual refinement to MCP handoff
-- `references/figma-prompt-patterns.md`: practical Figma AI mutation patterns and prompt shapes
-- `references/typeui-registry/catalog.md`: index of TypeUI anchors
-- `references/typeui-registry/page-type-variants.md`: page-type to anchor mapping
-- `references/typeui-registry/skills/*.md`: deep anchor guidance
-- `references/surface-playbooks.md`: screen-type guidance
-- `references/shadcn-principles.md`: shadcn-friendly theming and component rules
-- `references/anti-ai-patterns.md`: generic UI failure modes to remove
-
 ## Output Expectations
 
-When you implement UI changes:
+When the work is substantial:
 
-- say which lane and mode you used when the work is substantial
+- say which lane and mode you used
 - make the visual direction explicit
 - keep hierarchy and interaction coherent across the whole surface
-- avoid meaningless filler sections and fake complexity
+- avoid filler sections and fake complexity
 - leave behind editable assets when they help, especially a stable Figma frame or node link
