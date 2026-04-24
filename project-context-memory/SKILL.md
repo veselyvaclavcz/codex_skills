@@ -15,7 +15,7 @@ The core idea is simple:
 
 When this skill is active, prefer automatic memory maintenance over waiting for the user to ask.
 
-This skill also maintains a managed block inside the project `AGENTS.md` so future threads are nudged to use both shared memory and model orchestration consistently.
+This skill also maintains a managed block inside the project `AGENTS.md` so future threads are nudged to use both shared memory and the cost-aware workflow consistently.
 
 ## Default Layout
 
@@ -39,7 +39,7 @@ For `AGENTS.md`, the rule is:
 
 - never delete user-authored content outside the managed block
 - keep the managed block updated on every sync
-- use the managed block to push consistent use of `$project-context-memory` and conditional use of `$model-orchestrator`
+- use the managed block to push consistent use of `$project-context-memory` and conditional use of `$codex-cost-aware-workflow`
 
 ## Workflow
 

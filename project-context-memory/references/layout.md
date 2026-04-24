@@ -20,7 +20,7 @@ The preferred automation entry point is `scripts/sync_project_memory.py`, which 
 The skill also maintains a managed block in the project `AGENTS.md` to reinforce two repository-level habits:
 
 - use shared project memory by default
-- use model orchestration only when delegation is worth the cost and complexity
+- use the cost-aware workflow only when delegation is worth the cost and complexity
 
 ## Top-Level Files
 

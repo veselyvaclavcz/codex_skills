@@ -6,6 +6,6 @@ This repository contains custom Codex skills for cross-project reuse.
 
 - `ui-design`
 - `project-context-memory`
-- `model-orchestrator`
+- `codex-cost-aware-workflow`
 
 Each skill is self-contained and can be copied into `~/.codex/skills/` on another machine.
