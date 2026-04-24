@@ -29,11 +29,13 @@ def run(cmd: list[str], cwd: Path | None = None) -> tuple[int, str]:
             cmd,
             cwd=str(cwd) if cwd else None,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             timeout=60,
         )
-        return proc.returncode, proc.stdout.strip()
+        return proc.returncode, (proc.stdout or "").strip()
     except FileNotFoundError:
         return 127, f"{cmd[0]} not found"
     except subprocess.TimeoutExpired:
