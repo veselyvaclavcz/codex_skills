@@ -1,0 +1,3 @@
+display_name: Codex Cost Workflow
+short_description: RTK and cheap-ai setup for Codex.
+default_prompt: Use $codex-cost-aware-workflow to set up a Windows Codex workflow with RTK, cheap-ai, and AGENTS.md rules.
