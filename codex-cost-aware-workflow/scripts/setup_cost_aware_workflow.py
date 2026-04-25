@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Set up a cost-aware Codex workflow for a project."""
+"""Set up a cost-aware Codex custom-subagent workflow."""
 
 from __future__ import annotations
 
 import argparse
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -17,10 +18,19 @@ from pathlib import Path
 
 SKILL_ROOT = Path(__file__).resolve().parents[1]
 TEMPLATES = SKILL_ROOT / "assets" / "templates"
+AGENT_TEMPLATES = TEMPLATES / "agents"
 PROJECT_BEGIN = "<!-- COST-AWARE-CODEX:BEGIN -->"
 PROJECT_END = "<!-- COST-AWARE-CODEX:END -->"
 GLOBAL_BEGIN = "<!-- COST-AWARE-CODEX-GLOBAL:BEGIN -->"
 GLOBAL_END = "<!-- COST-AWARE-CODEX-GLOBAL:END -->"
+
+
+AGENT_FILES = [
+    "explorer-fast.toml",
+    "worker-cheap.toml",
+    "reviewer-mini.toml",
+    "summarizer-nano.toml",
+]
 
 
 def run(cmd: list[str], cwd: Path | None = None) -> tuple[int, str]:
@@ -46,7 +56,7 @@ def read_template(name: str) -> str:
     return (TEMPLATES / name).read_text(encoding="utf-8")
 
 
-def write_text_if_changed(path: Path, content: str, force: bool = True) -> bool:
+def write_if_changed(path: Path, content: str, force: bool = True) -> bool:
     if path.exists() and not force:
         return False
     if path.exists() and path.read_text(encoding="utf-8") == content:
@@ -99,11 +109,6 @@ def check_environment(root: Path) -> list[str]:
     codex_dir.mkdir(parents=True, exist_ok=True)
     messages.append(f"OK   codex dir: {codex_dir}")
 
-    if os.environ.get("OPENCODE_API_KEY"):
-        messages.append("OK   OPENCODE_API_KEY: set")
-    else:
-        messages.append('MISS OPENCODE_API_KEY: set it with [Environment]::SetEnvironmentVariable("OPENCODE_API_KEY", "YOUR_KEY", "User")')
-
     if command_available("rtk"):
         for cmd in [["rtk", "--version"], ["rtk", "gain"]]:
             code, out = run(cmd, cwd=root)
@@ -155,11 +160,70 @@ def install_rtk_windows() -> str:
     return f"OK   RTK installed to {bin_dir}. Restart terminal if rtk is still not found."
 
 
-def setup_project(root: Path, skip_global_agents: bool, force: bool) -> list[str]:
+def set_toml_key(text: str, table: str, key: str, value: str) -> str:
+    header = f"[{table}]"
+    table_re = re.compile(rf"(?ms)^\[{re.escape(table)}\]\s*$.*?(?=^\[|\Z)")
+    match = table_re.search(text)
+
+    line = f"{key} = {value}"
+    if not match:
+        suffix = "" if text.endswith("\n") or not text else "\n"
+        return f"{text}{suffix}\n{header}\n{line}\n"
+
+    block = match.group(0).rstrip()
+    key_re = re.compile(rf"(?m)^{re.escape(key)}\s*=.*$")
+    if key_re.search(block):
+        new_block = key_re.sub(line, block)
+    else:
+        new_block = block + "\n" + line
+    return text[: match.start()] + new_block + "\n" + text[match.end() :]
+
+
+def merge_config(path: Path) -> str:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    text = path.read_text(encoding="utf-8") if path.exists() else ""
+
+    desired = [
+        ("features", "multi_agent", "true"),
+        ("agents", "max_threads", "3"),
+        ("agents", "max_depth", "1"),
+        ("agents", "job_max_runtime_seconds", "1200"),
+        ("profiles.deep", "model", '"gpt-5.5"'),
+        ("profiles.deep", "model_reasoning_effort", '"high"'),
+        ("profiles.deep", "model_verbosity", '"medium"'),
+        ("profiles.balanced", "model", '"gpt-5.4"'),
+        ("profiles.balanced", "model_reasoning_effort", '"medium"'),
+        ("profiles.balanced", "model_verbosity", '"low"'),
+        ("profiles.fast", "model", '"gpt-5.4-mini"'),
+        ("profiles.fast", "model_reasoning_effort", '"low"'),
+        ("profiles.fast", "model_verbosity", '"low"'),
+    ]
+
+    for table, key, value in desired:
+        text = set_toml_key(text, table, key, value)
+
+    original = path.read_text(encoding="utf-8") if path.exists() else ""
+    if text != original:
+        path.write_text(text.strip() + "\n", encoding="utf-8", newline="\n")
+        return "updated" if original else "created"
+    return "unchanged"
+
+
+def install_agent_templates(target_dir: Path, force: bool) -> list[str]:
     messages: list[str] = []
-    cheap_ai_path = root / "tools" / "cheap-ai.mjs"
-    changed = write_text_if_changed(cheap_ai_path, read_template("cheap-ai.mjs"), force=force)
-    messages.append(("WROTE" if changed else "OK   ") + f" {cheap_ai_path}")
+    for name in AGENT_FILES:
+        src = AGENT_TEMPLATES / name
+        dst = target_dir / name
+        changed = write_if_changed(dst, src.read_text(encoding="utf-8"), force=force)
+        messages.append(("WROTE" if changed else "OK   ") + f" {dst}")
+    return messages
+
+
+def setup_project(root: Path, force: bool) -> list[str]:
+    messages: list[str] = []
+    codex_dir = root / ".codex"
+    messages.append(f"{merge_config(codex_dir / 'config.toml').upper():7} {codex_dir / 'config.toml'}")
+    messages.extend(install_agent_templates(codex_dir / "agents", force=force))
 
     project_agents = root / "AGENTS.md"
     action = update_managed_block(
@@ -168,57 +232,68 @@ def setup_project(root: Path, skip_global_agents: bool, force: bool) -> list[str
         PROJECT_BEGIN,
         PROJECT_END,
     )
-    messages.append(f"{action.upper():5} {project_agents}")
-
-    if not skip_global_agents:
-        global_agents = Path.home() / ".codex" / "AGENTS.md"
-        action = update_managed_block(
-            global_agents,
-            read_template("global-agents-block.md"),
-            GLOBAL_BEGIN,
-            GLOBAL_END,
-        )
-        messages.append(f"{action.upper():5} {global_agents}")
-
+    messages.append(f"{action.upper():7} {project_agents}")
     return messages
 
 
-def smoke_test(root: Path, live: bool) -> list[str]:
+def setup_global(force: bool) -> list[str]:
     messages: list[str] = []
-    tests = [["node", "tools/cheap-ai.mjs", "--help"]]
+    codex_dir = Path.home() / ".codex"
+    messages.append(f"{merge_config(codex_dir / 'config.toml').upper():7} {codex_dir / 'config.toml'}")
+    messages.extend(install_agent_templates(codex_dir / "agents", force=force))
+
+    global_agents = codex_dir / "AGENTS.md"
+    action = update_managed_block(
+        global_agents,
+        read_template("global-agents-block.md"),
+        GLOBAL_BEGIN,
+        GLOBAL_END,
+    )
+    messages.append(f"{action.upper():7} {global_agents}")
+    return messages
+
+
+def smoke_test(root: Path, label: str) -> list[str]:
+    messages: list[str] = []
+    messages.append(f"Smoke target ({label}): {root}")
     if command_available("rtk"):
-        tests.extend([["rtk", "--version"], ["rtk", "gain"], ["rtk", "git", "status"]])
-
-    for cmd in tests:
-        code, out = run(cmd, cwd=root)
-        first = out.splitlines()[0] if out else "no output"
-        status = "OK  " if code == 0 else "WARN"
-        messages.append(f"{status} {' '.join(cmd)}: {first}")
-
-    if live:
-        if not os.environ.get("OPENCODE_API_KEY"):
-            messages.append("SKIP live smoke: OPENCODE_API_KEY is missing")
-        else:
-            code, out = run(
-                ["node", "tools/cheap-ai.mjs", "--model", "qwen3.6-plus", "--task", "Return exactly: OK"],
-                cwd=root,
-            )
+        for cmd in [["rtk", "--version"], ["rtk", "gain"], ["rtk", "git", "status"]]:
+            code, out = run(cmd, cwd=root)
             first = out.splitlines()[0] if out else "no output"
             status = "OK  " if code == 0 else "WARN"
-            messages.append(f"{status} live cheap-ai qwen3.6-plus: {first}")
+            messages.append(f"{status} {' '.join(cmd)}: {first}")
+
+    toml_files = [
+        root / ".codex" / "config.toml",
+        *(root / ".codex" / "agents" / name for name in AGENT_FILES),
+    ]
+    for path in toml_files:
+        if not path.exists():
+            messages.append(f"WARN missing: {path}")
+            continue
+        code, out = run(
+            [
+                sys.executable,
+                "-c",
+                "import pathlib,tomllib,sys; tomllib.loads(pathlib.Path(sys.argv[1]).read_text(encoding='utf-8'))",
+                str(path),
+            ],
+            cwd=root,
+        )
+        status = "OK  " if code == 0 else "WARN"
+        messages.append(f"{status} TOML {path.name}: {out or 'valid'}")
 
     return messages
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Set up RTK and OpenCode Go cheap-ai workflow for Codex.")
+    parser = argparse.ArgumentParser(description="Set up RTK and Codex custom subagents for cost-aware work.")
     parser.add_argument("--root", default=".", help="Project root. Defaults to current directory.")
+    parser.add_argument("--scope", choices=["project", "global", "both"], default="project", help="Where to install config and custom agents.")
     parser.add_argument("--check-only", action="store_true", help="Only check environment; do not write project files.")
     parser.add_argument("--install-rtk", action="store_true", help="Install RTK from rtk-ai/rtk releases on Windows.")
-    parser.add_argument("--skip-global-agents", action="store_true", help="Do not update ~/.codex/AGENTS.md.")
-    parser.add_argument("--no-force", action="store_true", help="Do not overwrite an existing tools/cheap-ai.mjs.")
+    parser.add_argument("--no-force", action="store_true", help="Do not overwrite existing agent TOML files.")
     parser.add_argument("--smoke-test", action="store_true", help="Run local smoke tests after setup.")
-    parser.add_argument("--live-smoke", action="store_true", help="Run a live OpenCode Go smoke test when the API key is set.")
     args = parser.parse_args()
 
     root = Path(args.root).expanduser().resolve()
@@ -234,19 +309,26 @@ def main() -> int:
         print(install_rtk_windows())
 
     if not args.check_only:
-        for msg in setup_project(root, args.skip_global_agents, force=not args.no_force):
-            print(msg)
+        if args.scope in {"project", "both"}:
+            for msg in setup_project(root, force=not args.no_force):
+                print(msg)
+        if args.scope in {"global", "both"}:
+            for msg in setup_global(force=not args.no_force):
+                print(msg)
 
-    if args.smoke_test or args.live_smoke:
-        for msg in smoke_test(root, live=args.live_smoke):
-            print(msg)
+    if args.smoke_test:
+        if args.scope in {"project", "both"}:
+            for msg in smoke_test(root, "project"):
+                print(msg)
+        if args.scope in {"global", "both"}:
+            for msg in smoke_test(Path.home(), "global"):
+                print(msg)
 
-    if not os.environ.get("OPENCODE_API_KEY"):
-        print("NEXT Set OPENCODE_API_KEY before live OpenCode Go calls.")
     if command_available("rtk"):
-        print("NEXT Run: rtk init -g --codex")
+        print("NEXT Use RTK-wrapped commands for long shell output.")
     else:
         print("NEXT Install RTK, then run: rtk init -g --codex")
+    print("NEXT Ask Codex explicitly when you want subagents spawned; config alone does not force automatic downscaling.")
 
     return 0
 

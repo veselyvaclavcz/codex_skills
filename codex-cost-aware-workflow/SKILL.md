@@ -1,75 +1,111 @@
 ---
 name: codex-cost-aware-workflow
-description: Set up and maintain a Windows Codex cost-aware workflow with RTK terminal-output compression, an OpenCode Go cheap-ai read-only subagent CLI, and AGENTS.md rules. Use when the user wants Codex to stay the main orchestrator while delegating low-risk summaries, test ideas, edge-case discovery, documentation drafts, or isolated code explanations to cheaper models.
+description: Set up and operate a cost-aware Codex workflow using Codex custom subagents and RTK. Use when the user wants the main Codex model to stay the senior orchestrator while cheaper Codex subagents handle bounded exploration, small implementation tasks, reviews, summaries, logs, and extraction work with explicit routing rules in AGENTS.md.
 ---
 
 # Codex Cost Aware Workflow
 
 ## Core Rule
 
-Keep Codex as the supervising agent. Use cheaper tools only as helpers:
+Keep the main Codex session as the senior orchestrator. Use subagents only for bounded work that is easy to verify.
 
-- RTK wraps noisy shell commands and compresses long output.
-- `tools/cheap-ai.mjs` calls OpenCode Go models for read-only helper analysis.
-- `AGENTS.md` records the project policy so future threads use the same workflow.
+This skill does not rely on an `auto_downscale` switch. Codex does not automatically route every turn to cheaper models just because a config file exists. The practical pattern is:
 
-Do not let cheap models edit files, make final architecture calls, review security-sensitive code, handle secrets, or become the source of truth.
+- main session: planning, architecture, integration, final edits, final review
+- custom subagents: scoped exploration, small changes, review, summarization
+- RTK: compress long shell output
+- `AGENTS.md`: remind future threads how to route work
+
+Subagents still consume Codex usage. Use them to isolate context and save main-model attention, not for every small one-step task.
 
 ## Setup Workflow
 
 For a project setup request, run:
 
 ```powershell
-python "$env:USERPROFILE\.codex\skills\codex-cost-aware-workflow\scripts\setup_cost_aware_workflow.py" --root "C:\path\to\project"
+python "$env:USERPROFILE\.codex\skills\codex-cost-aware-workflow\scripts\setup_cost_aware_workflow.py" --root "C:\path\to\project" --scope project --smoke-test
 ```
 
-Use `--smoke-test` after setup to verify local wiring. Use `--live-smoke` only when `OPENCODE_API_KEY` is set and the user expects a real OpenCode Go request.
+Use `--scope global` to install the same custom agents under `%USERPROFILE%\.codex\agents`.
 
-Use `--install-rtk` only when the user explicitly wants the script to install RTK. Otherwise, report missing RTK and show the install command or release path.
+Use `--install-rtk` only when RTK is missing and the user wants the script to install it from `rtk-ai/rtk`.
 
-## What The Script Does
+## What The Script Writes
 
-The setup script:
+Project scope writes:
 
-- verifies `node`, `npm`, and `git`
-- ensures `%USERPROFILE%\.codex` exists
-- checks `OPENCODE_API_KEY` without printing it
-- checks RTK via `rtk --version` and `rtk gain`
-- optionally installs RTK on Windows from `rtk-ai/rtk` releases
-- writes `tools/cheap-ai.mjs` into the target project
-- adds a managed cost-aware block to project `AGENTS.md`
-- adds a short managed global policy to `%USERPROFILE%\.codex\AGENTS.md`
-- never stores API keys in repo files
+- `.codex/config.toml` with multi-agent enabled and conservative subagent limits
+- `.codex/agents/explorer-fast.toml`
+- `.codex/agents/worker-cheap.toml`
+- `.codex/agents/reviewer-mini.toml`
+- `.codex/agents/summarizer-nano.toml`
+- `AGENTS.md` managed cost-aware block
 
-## Operating Policy
+Global scope writes:
 
-Use RTK-wrapped commands when output may be long:
+- `%USERPROFILE%\.codex\agents\*.toml`
+- `%USERPROFILE%\.codex\config.toml` multi-agent limits and optional profiles
+- `%USERPROFILE%\.codex\AGENTS.md` managed cost-aware block
+
+Do not overwrite unrelated user rules outside managed blocks.
+
+## Routing Policy
+
+Use the main model directly for:
+
+- task planning
+- architecture
+- security-sensitive decisions
+- final implementation decisions
+- final diff review
+- integration of subagent results
+- anything ambiguous or high-risk
+
+Use subagents only when the work is well scoped, low risk, easy to verify, and benefits from isolated context.
+
+Default routing:
+
+- `explorer-fast`: read-only codebase exploration, file discovery, execution paths, symbols, tests
+- `worker-cheap`: small, localized, low-risk code changes after the parent defines the exact task
+- `reviewer-mini`: cost-efficient review for correctness, regressions, missing tests, edge cases
+- `summarizer-nano`: logs, docs, long command output, simple extraction
+
+Use at most `2-3` subagents unless the user explicitly asks for wider parallel work.
+
+## Prompt Pattern
+
+When the user asks for cost-aware work, use language like:
+
+```text
+I will keep the main session as orchestrator.
+I will use explorer-fast for read-only reconnaissance.
+If the change is small and clear, I will delegate it to worker-cheap.
+I will use reviewer-mini for a focused diff review.
+I will verify results myself before finalizing.
+```
+
+Do not pretend subagents were used. If no subagent was useful, say that and do the work directly.
+
+## RTK Policy
+
+Prefer RTK-wrapped commands whenever output may be long:
 
 ```powershell
 rtk git status
 rtk git diff
+rtk git log
 rtk rg "pattern" .
+rtk find "pattern" .
 rtk npm test
+rtk pnpm test
+rtk npm run build
 rtk pnpm build
 rtk tsc
+rtk docker logs
 ```
 
-Use cheap-ai only for read-only subtasks:
+Avoid raw long-output commands unless full output is explicitly needed.
 
-```powershell
-node tools\cheap-ai.mjs --model qwen3.6-plus --task "Suggest unit tests for this file." --files "src/auth.ts"
-```
+## References
 
-Good cheap-ai tasks: summarize long files, suggest tests, find edge cases, draft docs, explain isolated functions, compare low-risk refactor options.
-
-Keep Codex direct for: implementation, final review, security, auth, payments, migrations, destructive operations, production deployment, dependency upgrades, and complex debugging.
-
-## Model Defaults
-
-Default to `qwen3.6-plus` for general cheap coding analysis.
-
-Try `kimi-k2.6`, `glm-5.1`, or `mimo-v2-pro` for coding-heavy analysis when the default is weak or rate-limited.
-
-Use `minimax-m2.7` or `minimax-m2.5` only when the MiniMax `messages` endpoint is explicitly useful or needs testing.
-
-Open `references/provider-notes.md` only when checking current endpoint details, model lists, RTK Windows behavior, or troubleshooting provider setup.
+Open `references/codex-subagents.md` when checking current Codex custom-agent schema, model choices, config behavior, or known runtime caveats.

@@ -1,0 +1,22 @@
+[features]
+multi_agent = true
+
+[agents]
+max_threads = 3
+max_depth = 1
+job_max_runtime_seconds = 1200
+
+[profiles.deep]
+model = "gpt-5.5"
+model_reasoning_effort = "high"
+model_verbosity = "medium"
+
+[profiles.balanced]
+model = "gpt-5.4"
+model_reasoning_effort = "medium"
+model_verbosity = "low"
+
+[profiles.fast]
+model = "gpt-5.4-mini"
+model_reasoning_effort = "low"
+model_verbosity = "low"
