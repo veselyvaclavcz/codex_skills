@@ -5,6 +5,8 @@
 
 The main Codex session is the senior orchestrator.
 
+This is the default operating policy for substantial work in this project. Treat this file as standing user permission to use cost-aware orchestration when the routing criteria match; the user should not need to repeat the prompt manually.
+
 Use the main model for:
 - task planning
 - architecture
@@ -27,6 +29,12 @@ Prefer these subagents:
 
 Do not use subagents for very small one-step tasks.
 Use at most 2-3 subagents unless the user explicitly asks for broader parallel exploration.
+
+Default behavior:
+- For substantial codebase exploration, spawn `explorer-fast` before making a plan.
+- For a small, localized, clearly specified change, consider `worker-cheap`.
+- After non-trivial edits, consider `reviewer-mini` for a focused diff review.
+- For long logs, docs, or command output, use `summarizer-nano` or RTK compression.
 
 ## Model cost rule
 

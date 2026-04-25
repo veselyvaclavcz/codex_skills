@@ -9,6 +9,8 @@ description: Set up and operate a cost-aware Codex workflow using Codex custom s
 
 Keep the main Codex session as the senior orchestrator. Use subagents only for bounded work that is easy to verify.
 
+The generated `AGENTS.md` blocks should make cost-aware orchestration the default policy for substantial work. Users should not need to paste a prompt every time; prompts are only needed when they want to force a particular routing choice.
+
 This skill does not rely on an `auto_downscale` switch. Codex does not automatically route every turn to cheaper models just because a config file exists. The practical pattern is:
 
 - main session: planning, architecture, integration, final edits, final review
@@ -74,7 +76,7 @@ Use at most `2-3` subagents unless the user explicitly asks for wider parallel w
 
 ## Prompt Pattern
 
-When the user asks for cost-aware work, use language like:
+When explaining or forcing the workflow, use language like:
 
 ```text
 I will keep the main session as orchestrator.

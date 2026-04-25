@@ -328,7 +328,7 @@ def main() -> int:
         print("NEXT Use RTK-wrapped commands for long shell output.")
     else:
         print("NEXT Install RTK, then run: rtk init -g --codex")
-    print("NEXT Ask Codex explicitly when you want subagents spawned; config alone does not force automatic downscaling.")
+    print("NEXT AGENTS.md is the standing routing policy. Explicit prompts are only needed when you want to force a specific subagent path.")
 
     return 0
 
