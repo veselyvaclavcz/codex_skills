@@ -49,7 +49,7 @@ def build_agents_block(root: Path) -> str:
         "Use shared project memory by default for substantial work in this repository.\n\n"
         "## Required Memory Workflow\n\n"
         "1. At thread start, run:\n"
-        f"   `python \"C:\\Users\\mail\\.codex\\skills\\project-context-memory\\scripts\\sync_project_memory.py\" --mode start --root \"{root}\"`\n"
+        f"   `python \"$env:USERPROFILE\\.codex\\skills\\project-context-memory\\scripts\\sync_project_memory.py\" --mode start --root \"{root}\"`\n"
         "2. Read the files reported by the sync script before making a plan.\n"
         "3. Record meaningful checkpoints and thread endings with the same sync script using `--mode checkpoint` or `--mode finish`.\n\n"
         "## Cost-Aware Workflow Rules\n\n"
