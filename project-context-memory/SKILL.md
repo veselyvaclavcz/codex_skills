@@ -48,7 +48,7 @@ For `AGENTS.md`, the rule is:
 At the start of work, immediately run the autopilot sync wrapper:
 
 ```powershell
-python "C:\Users\mail\.codex\skills\project-context-memory\scripts\sync_project_memory.py" --mode start
+python "$env:USERPROFILE\.codex\skills\project-context-memory\scripts\sync_project_memory.py" --mode start
 ```
 
 This wrapper:
@@ -65,7 +65,7 @@ At the start of work, check whether `docs/project-memory/` exists.
 If it does not exist, run:
 
 ```powershell
-python "C:\Users\mail\.codex\skills\project-context-memory\scripts\bootstrap_project_memory.py" --root "C:\path\to\project"
+python "$env:USERPROFILE\.codex\skills\project-context-memory\scripts\bootstrap_project_memory.py" --root "C:\path\to\project"
 ```
 
 If the workspace is almost empty, still bootstrap it. The point is to create a stable place for future threads to write and read context.
@@ -96,7 +96,7 @@ Create a conversation note when:
 Use:
 
 ```powershell
-python "C:\Users\mail\.codex\skills\project-context-memory\scripts\record_conversation.py" `
+python "$env:USERPROFILE\.codex\skills\project-context-memory\scripts\record_conversation.py" `
   --root "C:\path\to\project" `
   --title "Fix login redirect regression" `
   --summary "Investigated redirect loop and narrowed the issue to callback URL normalization." `
@@ -109,7 +109,7 @@ Repeat `--decision`, `--file`, `--next-step`, and `--tag` as needed.
 For lower-friction operation, prefer the wrapper:
 
 ```powershell
-python "C:\Users\mail\.codex\skills\project-context-memory\scripts\sync_project_memory.py" `
+python "$env:USERPROFILE\.codex\skills\project-context-memory\scripts\sync_project_memory.py" `
   --mode checkpoint `
   --title "Fix login redirect regression" `
   --summary "Investigated redirect loop and narrowed the issue to callback URL normalization." `
@@ -138,7 +138,7 @@ Conversation notes should not become the only source of truth.
 If notes are added manually or imported from elsewhere, rebuild the index:
 
 ```powershell
-python "C:\Users\mail\.codex\skills\project-context-memory\scripts\rebuild_conversation_index.py" --root "C:\path\to\project"
+python "$env:USERPROFILE\.codex\skills\project-context-memory\scripts\rebuild_conversation_index.py" --root "C:\path\to\project"
 ```
 
 ## Recommended Behavior In Threads
